@@ -43,7 +43,7 @@ public class Html {
                     <footer>Go Foody - Online Food Ordering System converted from Python Flask to Java Quarkus</footer>
                 </body>
                 </html>
-                """.formatted(esc(title), admin, manager, auth, body);
+                """.formatted(esc(title), admin, manager, auth, body) + com.gofoody.chatbot.ChatbotWidget.widget();
     }
 
     public static String alert(String message) {
