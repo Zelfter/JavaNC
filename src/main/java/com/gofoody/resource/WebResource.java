@@ -8,6 +8,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Path("/")
@@ -20,7 +22,47 @@ public class WebResource {
         if (c == null) return null;
         try { return db.user(Long.parseLong(c.getValue())); } catch (Exception e) { return null; }
     }
-    private Response redirect(String path) { return Response.seeOther(URI.create(path)).build(); }
+    
+    private Response redirect(String path) {
+        try {
+            String[] parts = path.split("\\?", 2);
+
+            if (parts.length == 1) {
+                return Response.seeOther(URI.create(path)).build();
+            }
+
+            String query = parts[1];
+            StringBuilder encodedQuery = new StringBuilder();
+
+            String[] params = query.split("&");
+
+            for (String param : params) {
+                if (encodedQuery.length() > 0) {
+                    encodedQuery.append("&");
+                }
+
+                String[] keyValue = param.split("=", 2);
+
+                String key = URLEncoder.encode(
+                    keyValue[0], StandardCharsets.UTF_8
+                );
+
+                String value = keyValue.length > 1
+                    ? URLEncoder.encode(keyValue[1], StandardCharsets.UTF_8)
+                    : "";
+
+                encodedQuery.append(key).append("=").append(value);
+            }
+
+            URI uri = URI.create(parts[0] + "?" + encodedQuery);
+
+            return Response.seeOther(uri).build();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Redirect failed: " + path, e);
+        }
+    }
+
     private Response needLogin() { return redirect("/login?msg=Bạn cần đăng nhập trước"); }
     private boolean role(User u, String r) { return u != null && r.equals(u.role); }
 

@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # Monitor Prometheus
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Monitor Go Foody Quarkus
+  - job_name: "gofoody-backend"
+    metrics_path: "/q/metrics"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+        labels:
+          application: "gofoody"
+          environment: "development"

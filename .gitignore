@@ -1,18 +1,54 @@
+# Java compiled files
+*.class
+*.jar
+*.war
+*.ear
+
 # Maven
 target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
 
-# IDE
+# Gradle
+.gradle/
+build/
+
+# IDE - IntelliJ
 .idea/
-.vscode/
 *.iml
+out/
+
+# IDE - VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
+logs/
 
-# Environment
+# Environment variables / secrets
 .env
 .env.*
+!.env.example
 
-# OS
-.DS_Store
-Thumbs.db
+# Temporary files
+*.tmp
+*.bak
+
+# Database
+*.sqlite
+*.db
+
+# Node.js (nếu có frontend)
+node_modules/
+dist/

@@ -1,5 +1,7 @@
 package com.gofoody.chatbot;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gofoody.model.MenuItem;
 import com.gofoody.service.Db;
 import jakarta.annotation.PostConstruct;
@@ -73,9 +75,11 @@ public class RagService {
         ChatbotModels.ChatResponse resp = new ChatbotModels.ChatResponse();
 
         // Nếu VectorStore chưa có dữ liệu -> thử lại (lazy sync)
-        if (store.isEmpty()) {
-            try { refresh(); } catch (Exception e) { /* ignore */ }
-        }
+        // if (store.isEmpty()) {
+        //     try { refresh(); } catch (Exception e) { /* ignore */ }
+        // }
+
+        try { refresh(); } catch (Exception e) { /* ignore */ }
 
         // ── 1. RETRIEVE ──────────────────────────────────────────────────
         List<VectorStore.ScoredDoc> hits = store.retrieve(question, config.topK(), config.minScore());
@@ -202,6 +206,181 @@ public class RagService {
         // Parse: "content" field từ JSON response OpenAI-compatible
         return parseContent(body);
     }
+
+
+//     private String callLlm(String question, String context)
+//         throws Exception {
+
+//         // Hardcode sử dụng Gemini
+//         return callGemini(question, context);
+//     }
+
+//     private String toJsonString(String value) throws Exception {
+//         return new ObjectMapper().writeValueAsString(value);
+//     }
+
+//     private String callGemini(String question, String context)
+//             throws Exception {
+
+//         String systemPrompt = """
+//                 Bạn là trợ lý tư vấn món ăn cho ứng dụng Go Foody.
+//                 Hãy trả lời ngắn gọn, thân thiện bằng tiếng Việt
+//                 (hoặc tiếng Anh nếu người dùng hỏi bằng tiếng Anh).
+//                 Chỉ tư vấn dựa trên thông tin sản phẩm được cung cấp.
+//                 Không bịa đặt.
+//                 Nếu không chắc, hãy hướng người dùng duyệt menu trực tiếp.
+//                 """.stripIndent().trim();
+
+//         String prompt = systemPrompt
+//                 + "\n\nThông tin sản phẩm:\n" + context
+//                 + "\n\nCâu hỏi của khách: " + question;
+
+//         String json = """
+//                 {
+//                 "contents": [{
+//                     "parts": [{
+//                     "text": %s
+//                     }]
+//                 }]
+//                 }
+//                 """.formatted(toJsonString(prompt));
+
+//         String endpoint = config.baseUrl().replaceAll("/$", "")
+//                 + "/models/" + config.model()
+//                 + ":generateContent";
+
+//         HttpURLConnection conn = (HttpURLConnection)
+//                 URI.create(endpoint).toURL().openConnection();
+
+//         conn.setConnectTimeout(5000);
+//         conn.setReadTimeout((int) (config.timeoutSeconds() * 1000));
+//         conn.setDoOutput(true);
+//         conn.setRequestMethod("POST");
+
+//         conn.setRequestProperty(
+//                 "Content-Type", "application/json; charset=utf-8"
+//         );
+
+//         conn.setRequestProperty(
+//                 "x-goog-api-key", config.apiKey()
+//         );
+
+//         try (OutputStream os = conn.getOutputStream()) {
+//             os.write(json.getBytes(StandardCharsets.UTF_8));
+//         }
+
+//         int status = conn.getResponseCode();
+
+//         InputStream is = status >= 200 && status < 300
+//                 ? conn.getInputStream()
+//                 : conn.getErrorStream();
+
+//         String body = new String(
+//                 is.readAllBytes(),
+//                 StandardCharsets.UTF_8
+//         );
+
+//         if (status < 200 || status >= 300) {
+//             throw new RuntimeException(
+//                     "Gemini API error " + status + ": " + body
+//             );
+//         }
+
+//         return parseGeminiContent(body);
+//     }
+
+//     private String parseGeminiContent(String body)
+//         throws Exception {
+
+//         ObjectMapper mapper = new ObjectMapper();
+
+//         JsonNode root = mapper.readTree(body);
+
+//         JsonNode text = root.path("candidates")
+//                 .path(0)
+//                 .path("content")
+//                 .path("parts")
+//                 .path(0)
+//                 .path("text");
+
+//         if (text.isMissingNode() || text.isNull()) {
+//             throw new RuntimeException(
+//                 "Gemini không trả về nội dung: " + body
+//             );
+//         }
+
+//         return text.asText();
+//     }
+
+//     private String callOpenAI(String question, String context)
+//             throws Exception {
+
+//         String systemPrompt = """
+//                 Bạn là trợ lý tư vấn món ăn cho ứng dụng Go Foody.
+//                 Hãy trả lời ngắn gọn, thân thiện bằng tiếng Việt
+//                 (hoặc tiếng Anh nếu người dùng hỏi bằng tiếng Anh).
+//                 Chỉ tư vấn dựa trên thông tin sản phẩm được cung cấp.
+//                 Không bịa đặt.
+//                 Nếu không chắc, hãy hướng người dùng duyệt menu trực tiếp.
+//                 """.stripIndent().trim();
+
+//         String userMessage = context
+//                 + "\n\nCâu hỏi của khách: " + question;
+
+//         String json = jsonChatRequest(
+//                 config.model(),
+//                 systemPrompt,
+//                 userMessage
+//         );
+
+//         String endpoint = config.baseUrl()
+//                 .replaceAll("/$", "")
+//                 + "/chat/completions";
+
+//         HttpURLConnection conn = (HttpURLConnection)
+//                 URI.create(endpoint).toURL().openConnection();
+
+//         conn.setConnectTimeout(5000);
+//         conn.setReadTimeout((int) (config.timeoutSeconds() * 1000));
+//         conn.setDoOutput(true);
+//         conn.setRequestMethod("POST");
+
+//         conn.setRequestProperty(
+//                 "Content-Type", "application/json; charset=utf-8"
+//         );
+
+//         conn.setRequestProperty(
+//                 "Authorization", "Bearer " + config.apiKey()
+//         );
+
+//         conn.setRequestProperty(
+//                 "User-Agent", "GoFoody-RAG/1.0"
+//         );
+
+//         try (OutputStream os = conn.getOutputStream()) {
+//             os.write(json.getBytes(StandardCharsets.UTF_8));
+//         }
+
+//         int status = conn.getResponseCode();
+
+//         InputStream is = status >= 200 && status < 300
+//                 ? conn.getInputStream()
+//                 : conn.getErrorStream();
+
+//         String body = new String(
+//                 is.readAllBytes(),
+//                 StandardCharsets.UTF_8
+//         );
+
+//         if (status < 200 || status >= 300) {
+//             throw new RuntimeException(
+//                     "OpenAI API error " + status + ": " + body
+//             );
+//         }
+
+//         return parseContent(body);
+//     }
+// ///////////////////////////////////////////////////
 
     /** Xây JSON cho Chat Completions (tự viết để không cần thư viện JSON). */
     private static String jsonChatRequest(String model, String system, String user) {
